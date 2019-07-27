@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+                http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd   
+                http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd   
+                http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd 
+                http://www.springframework.org/schema/context 
+                http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:component-scan base-package="cn.appsys.service"/>
+    <context:component-scan base-package="cn.appsys.dao"/>
+    <context:annotation-config/>
+    <context:property-placeholder location="classpath:database.properties"/>
+    <!-- JNDI获取数据源(使用dbcp连接池) -->
+    <!--设定destroy-method=”close”属性， 以便Spring容器关闭时，数据源能够正常关闭-->
+
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" scope="singleton">
+        <property name="driverClassName" value="${driver}"/>
+        <property name="url" value="${url}"/>
+        <property name="username" value="${user}"/>
+        <property name="password" value="${password}"/>
+        <!--池启动时创建的连接数量-->
+        <property name="initialSize" value="${initialSize}"/>
+        <!--同一时间可以从池分配的最多连接数量。设置为0时表示无限制-->
+        <property name="maxActive" value="${maxActive}"/>
+        <!--池里不会被释放的最多空闲连接数量-->
+        <property name="maxIdle" value="${maxIdle}"/>
+        <!--池里不会被释放的最多空闲连接数量-->
+        <property name="minIdle" value="${minIdle}"/>
+        <!-- 在抛出异常之前，池等待连接被回收的最长时间（当没有可用连接时）。设置为-1表示无限等待。  -->
+        <property name="maxWait" value="${maxWait}"/>
+        <!-- 是否自我中断，默认是 false，true设置自动回收超时连接 -->
+        <property name="removeAbandoned" value="${removeAbandoned}"/>
+        <!-- 超时时间(以秒数为单位) -->
+        <property name="removeAbandonedTimeout" value="${removeAbandonedTimeout}"/>
+        <property name="testWhileIdle" value="true"/>
+        <!--毫秒秒检查一次连接池中空闲的连接-->
+        <property name="timeBetweenEvictionRunsMillis" value="60000"/>
+        <!--链接池测试-->
+        <property name="testOnBorrow" value="false"/>
+        <!--连接池返回-->
+        <property name="testOnReturn" value="false"/>
+        <!--查询验证数据库连接的语句，mysql是select 1-->
+        <property name="validationQuery" value="select 1"/>
+        <!--进行后台对象清理时，每次检查几个链接，检查数取numTestsPerEvictionRun和池连接数最小值-->
+        <property name="numTestsPerEvictionRun" value="${maxActive}"/>
+    </bean>
+
+    <!-- 事务管理，使用spring进行事务管理  -->
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- 配置mybatis SqlSessionFactoryBean -->
+    <bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+    </bean>
+    <!--通过aop完成事务管理-->
+    <aop:aspectj-autoproxy/>
+    <aop:config proxy-target-class="true">
+        <aop:pointcut expression="execution(* *cn.appsys.service..*(..))" id="transService"/>
+        <aop:advisor advice-ref="myAdvice" pointcut-ref="transService"/>
+    </aop:config>
+
+    <tx:advice id="myAdvice" transaction-manager="txManager">
+        <tx:attributes>
+            <!--设置添加事务管理的方法-->
+            <tx:method name="appsys*" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="cn.appsys.dao"/>
+    </bean>
+</beans>
