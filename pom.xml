@@ -231,7 +231,7 @@
             <!--处理io流的工具，简化我们处理io流和操作文件的代码-->
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.4</version>
+            <version>2.7</version>
         </dependency>
         <dependency>
             <!--实现对象池化组件-->
