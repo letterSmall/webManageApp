@@ -244,7 +244,7 @@
             <!--alibaba的json库依赖-->
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>1.2.5</version>
+            <version>1.2.83</version>
         </dependency>
         <dependency>
             <!--开发基于servlet规范的http标准接口-->
